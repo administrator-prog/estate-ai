@@ -2,17 +2,23 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-const ALLOW_ORIGIN = process.env.CORS_ALLOW_ORIGIN || '*';
+const allowedOrigins = [
+  'https://theestateaigency.com',
+  'https://www.theestateaigency.com',
+];
 
-function withCors(res: NextResponse) {
-  res.headers.set('Access-Control-Allow-Origin', ALLOW_ORIGIN);
+function withCors(req: NextRequest, res: NextResponse) {
+  const origin = req.headers.get('origin') || '';
+  if (allowedOrigins.includes(origin)) {
+    res.headers.set('Access-Control-Allow-Origin', origin);
+  }
   res.headers.set('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.headers.set('Access-Control-Allow-Headers', 'Content-Type');
   return res;
 }
 
-export async function OPTIONS() {
-  return withCors(new NextResponse(null, { status: 204 }));
+export async function OPTIONS(req: NextRequest) {
+  return withCors(req, new NextResponse(null, { status: 204 }));
 }
 
 export async function POST(req: NextRequest) {
@@ -32,15 +38,15 @@ export async function POST(req: NextRequest) {
     };
 
     if (!payload.seller_email) {
-      return withCors(NextResponse.json({ error: 'seller_email required' }, { status: 400 }));
+      return withCors(req, NextResponse.json({ error: 'seller_email required' }, { status: 400 }));
     }
 
     const { data, error } = await supabase.from('properties').insert(payload).select('id').single();
     if (error) throw error;
 
-    return withCors(NextResponse.json({ property_id: data.id }));
+    return withCors(req, NextResponse.json({ property_id: data.id }));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : 'Server error';
-    return withCors(NextResponse.json({ error: msg }, { status: 500 }));
+    return withCors(req, NextResponse.json({ error: msg }, { status: 500 }));
   }
 }
