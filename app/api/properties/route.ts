@@ -31,8 +31,10 @@ export async function POST(req: NextRequest) {
     if (error) throw error;
 
     return NextResponse.json({ property_id: data.id });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message || 'Server error' }, { status: 500 });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
 export {};
